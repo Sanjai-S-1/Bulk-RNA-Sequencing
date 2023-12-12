@@ -8,3 +8,4 @@ The primary goal of this project is to meticulously replicate the results presen
 - Original Paper: [Link to the paper](https://doi.org/10.3389/fmed.2022.822094)
 
 ## Results
+![Slide2](https://github.com/Sanjai-S-1/Bulk-RNA-Sequencing/assets/105348464/a3a56bfe-0fde-4d7d-b2c7-2ab4d1017562)
