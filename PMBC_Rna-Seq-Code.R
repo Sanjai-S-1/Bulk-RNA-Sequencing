@@ -165,17 +165,6 @@ ggplot(pca.res.df, aes(x=PC1, y=PC2)) +
         legend.title = element_text(size = 16))
 
 
-# library(scatterplot3d)
-# 
-# scores <- pca.res.df[,1:3]
-# colors <- c("#999999", "#E69F00", "#56B4E9")
-# colour <- colors[as.numeric(group)]
-# scatterplot3d(scores$PC1, scores$PC2, scores$PC3,
-#               xlab="PC1", ylab="PC2", zlab="PC3",color = colour,
-#               pch = 16, type = "h", legend = group)
-
-
-
 pca.res.df <- pca.res$x[,1:4] %>% # note that this is the first time you've seen the 'pipe' operator from the magrittr package
   as_tibble() %>%
   add_column(sample = sampleLabels,
