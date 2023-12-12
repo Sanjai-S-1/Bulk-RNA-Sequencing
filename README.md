@@ -6,3 +6,5 @@ The primary goal of this project is to meticulously replicate the results presen
 
 **Paper Reference:**
 - Original Paper: [Link to the paper](https://doi.org/10.3389/fmed.2022.822094)
+
+## Results
