@@ -9,3 +9,7 @@ The primary goal of this project is to meticulously replicate the results presen
 
 ## Results
 ![Slide2](https://github.com/Sanjai-S-1/Bulk-RNA-Sequencing/assets/105348464/a3a56bfe-0fde-4d7d-b2c7-2ab4d1017562)
+
+![Slide3](https://github.com/Sanjai-S-1/Bulk-RNA-Sequencing/assets/105348464/d9b7d161-8ce0-4acd-ad1b-b3481dfe1e48)
+
+![Slide4](https://github.com/Sanjai-S-1/Bulk-RNA-Sequencing/assets/105348464/d6182dc9-4bcd-46ca-918a-143604ab9149)
