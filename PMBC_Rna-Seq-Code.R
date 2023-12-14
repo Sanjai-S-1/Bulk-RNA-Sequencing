@@ -236,7 +236,7 @@ ggplot(data = df, aes(x = logFC , y = -log10(P.Value ), col = diffexpressed, lab
        x = expression("log"[2]*"FC"), y = expression("-log"[10]*"p-value")) + 
   scale_x_continuous(breaks = seq(-12, 8, 2)) + # to customise the breaks in the x axis
   scale_y_continuous(breaks = seq(0,26,2)) +
-  ggtitle('Differential expressed genes in Healthy vs IBS-C individuals') + # Plot title 
+  ggtitle('Differential expressed genes in Healthy vs Diseased individuals') + # Plot title 
   geom_text_repel(max.overlaps = Inf) # To show all labels 
 
 
