@@ -163,6 +163,8 @@ ggplot(data = df, aes(x = logFC , y = -log10(P.Value ), col = diffexpressed, lab
 
 ##################################################################################
 
+# Getting the list of differencially expressed genes
+
 results <- decideTests(ebFit, method="global", adjust.method="BH", p.value=0.05, lfc=1) # determine differentially expressed genes
 colnames(v.DEGList.filtered.norm$E) <- sampleLabels
 diffGenes <- v.DEGList.filtered.norm$E[results[,1] !=0,]
