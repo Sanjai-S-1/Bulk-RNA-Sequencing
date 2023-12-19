@@ -1,34 +1,39 @@
-#Importing Libraries
+#Transcriptome Analysis of Peripheral Blood Mononuclear Cells in Pulmonary Sarcoidosis
 
-library(tidyverse)
-library(dplyr)
-library(GEOquery)
-library(edgeR)
-library(matrixStats)
-library(cowplot)
+#Importing Essential Libraries
+
+library(tidyverse) # For data manipulation
+library(dplyr) # For data wrangling
+library(GEOquery) # Access and analyze Gene Expression Omnibus (GEO) data
+library(edgeR) # RNA-Seq differential expression analysis
+library(matrixStats) # statistical operations on matrices.
+library(cowplot) # Combine multiple plots
 library(DT) # for making interactive tables
 library(plotly) # for making interactive plots
-library(gt)
+library(gt) # Data representation in interactive table
 library(limma) # venerable package for differential gene expression using linear modeling
-library(plotly)
-library(RColorBrewer) #need colors to make heatmaps
-library(ComplexHeatmap)
+library(plotly) # For plots
+library(RColorBrewer) # colors to make heatmaps
+library(ComplexHeatmap) # For heatmap
 library(GSEABase) #functions and methods for Gene Set Enrichment Analysis
 library(Biobase) #base functions for bioconductor; required by GSEABase
-library(GSVA) #Gene Set Variation Analysis, a non-parametric and unsupervised method for estimating variation of gene set enrichment across samples.
+library(GSVA) #Gene Set Variation Analysis
 library(gprofiler2) #tools for accessing the GO enrichment results using g:Profiler web resources
 library(clusterProfiler) # provides a suite of tools for functional enrichment analysis
 library(msigdbr) # access to msigdb collections directly within R
-library(enrichplot) # great for making the standard GSEA enrichment plots
-library(ggforce) 
-library(gplots)
-library(ggrepel)
+library(enrichplot) # For making the GSEA enrichment plots
+library(ggplot2) # For plots
+library(ggforce) # Extends ggplot2
+library(gplots) # For plots
+library(ggrepel) # Avoids label overlap in ggplot2
 
 # Reading Counts File
+# Counts File contains Genes in rows and the Samples in columns
 
 gene_counts <- read.csv("counts.txt", sep = "\t",  row.names = 1) 
 
 # Getting Metadata from GEO database
+# Metadata contains the additional information about the samples which is helpful for the analysis
 
 geo_id <- "GSE192829"
 gse <- getGEO(geo_id, GSEMatrix = T)
@@ -48,96 +53,33 @@ sampleLabels <- targets$title
 myDGEList <- DGEList(gene_counts)
 log2.cpm <- cpm(myDGEList, log=TRUE)
 
-
 log2.cpm.df <- as_tibble(log2.cpm, rownames = "geneID")
 colnames(log2.cpm.df) <- c("geneID", sampleLabels)
-log2.cpm.df.pivot <- pivot_longer(log2.cpm.df, # dataframe to be pivoted
-                                  cols = H1:PS8, # column names to be stored as a SINGLE variable
-                                  names_to = "samples", # name of that new variable (column)
-                                  values_to = "expression") # name of new variable (column) storing all the values (data)
-
-p1 <- ggplot(log2.cpm.df.pivot) +
-  aes(x=samples, y=expression, fill=samples) +
-  #geom_violin(trim = FALSE, show.legend = FALSE) +
-  geom_boxplot(show.legend = F) +
-  stat_summary(fun = "median", 
-               geom = "point", 
-               shape = 95, 
-               size = 10, 
-               color = "black", 
-               show.legend = FALSE) +
-  labs(y="log2 expression", x = "sample",
-       title="Log2 Counts per Million (CPM)",
-       subtitle="unfiltered, non-normalized",
-       caption=paste0("produced on ", Sys.time())) +
-  theme_bw()
 
 cpm <- cpm(myDGEList)
-keepers <- rowSums(cpm>1)>=8 #user defined
+keepers <- rowSums(cpm>1)>=8 # Onlt the genes which have CPM greater than 1 in at least 8 samples are kept
 myDGEList.filtered <- myDGEList[keepers,]
 
 
 log2.cpm.filtered <- cpm(myDGEList.filtered, log=TRUE)
 log2.cpm.filtered.df <- as_tibble(log2.cpm.filtered, rownames = "geneID")
 colnames(log2.cpm.filtered.df) <- c("geneID", sampleLabels)
-log2.cpm.filtered.df.pivot <- pivot_longer(log2.cpm.filtered.df, # dataframe to be pivoted
-                                           cols = H1:PS8, # column names to be stored as a SINGLE variable
-                                           names_to = "samples", # name of that new variable (column)
-                                           values_to = "expression") # name of new variable (column) storing all the values (data)
 
-p2 <- ggplot(log2.cpm.filtered.df.pivot) +
-  aes(x=samples, y=expression, fill=samples) +
-  #geom_violin(trim = FALSE, show.legend = FALSE) +
-  geom_boxplot(show.legend = F) +
-  stat_summary(fun = "median", 
-               geom = "point", 
-               shape = 95, 
-               size = 10, 
-               color = "black", 
-               show.legend = FALSE) +
-  labs(y="log2 expression", x = "sample",
-       title="Log2 Counts per Million (CPM)",
-       subtitle="filtered, non-normalized",
-       caption=paste0("produced on ", Sys.time())) +
-  theme_bw()
+# Normalisation of Data
 
 myDGEList.filtered.norm <- calcNormFactors(myDGEList.filtered, method = "TMM")
 log2.cpm.filtered.norm <- cpm(myDGEList.filtered.norm, log=TRUE)
 log2.cpm.filtered.norm.df <- as_tibble(log2.cpm.filtered.norm, rownames = "geneID")
 colnames(log2.cpm.filtered.norm.df) <- c("geneID", sampleLabels)
-log2.cpm.filtered.norm.df.pivot <- pivot_longer(log2.cpm.filtered.norm.df, # dataframe to be pivoted
-                                                cols = H1:PS8, # column names to be stored as a SINGLE variable
-                                                names_to = "samples", # name of that new variable (column)
-                                                values_to = "expression") # name of new variable (column) storing all the values (data)
-
-p3 <- ggplot(log2.cpm.filtered.norm.df.pivot) +
-  aes(x=samples, y=expression, fill=samples) +
-  #geom_violin(trim = FALSE, show.legend = FALSE) +
-  geom_boxplot(show.legend = F) + 
-  stat_summary(fun = "median", 
-               geom = "point", 
-               shape = 95, 
-               size = 10, 
-               color = "black", 
-               show.legend = FALSE) +
-  labs(y="log2 expression", x = "sample",
-       title="Log2 Counts per Million (CPM)",
-       subtitle="filtered, TMM normalized",
-       caption=paste0("produced on ", Sys.time())) +
-  theme_bw()
-
-plot_grid(p1, p2, p3, labels = c('A', 'B', 'C'), label_size = 12)
-
 
 ##############################################################################
 
 # Performing Principle Component Analysis [PCA]
 
+# Assigning the groups
 colnames(targets)[3] <- "group"
 group <- targets$group
 group <- factor(group)
-
-
 
 
 pca.res <- prcomp(t(log2.cpm.filtered.norm), scale.=F, retx=T)
@@ -164,26 +106,6 @@ ggplot(pca.res.df, aes(x=PC1, y=PC2)) +
         legend.text = element_text(size = 16),
         legend.title = element_text(size = 16))
 
-
-pca.res.df <- pca.res$x[,1:4] %>% # note that this is the first time you've seen the 'pipe' operator from the magrittr package
-  as_tibble() %>%
-  add_column(sample = sampleLabels,
-             group = group)
-
-pca.pivot <- pivot_longer(pca.res.df, # dataframe to be pivoted
-                          cols = PC1:PC4, # column names to be stored as a SINGLE variable
-                          names_to = "PC", # name of that new variable (column)
-                          values_to = "loadings") # name of new variable (column) storing all the values (data)
-
-ggplot(pca.pivot) +
-  aes(x=sample, y=loadings, fill=group) + # you could iteratively 'paint' different covariates onto this plot using the 'fill' aes
-  geom_bar(stat="identity") +
-  facet_wrap(~PC) +
-  labs(title="PCA 'small multiples' plot") +
-  theme_bw() +
-  coord_flip()
-
-
 #########################################################################################
 
 # Identification of differential expressed genes
@@ -204,9 +126,9 @@ myTopHits <- topTable(ebFit, adjust ="BH", coef=1, number=40000, sort.by="logFC"
 myTopHits.df <- myTopHits %>%
   as_tibble(rownames = "geneID")
 
+#########################################################################################
 
 # Violin plot of differential expressed genes
-
 
 # Add a column to the data frame to specify if they are UP- or DOWN- regulated (log2fc respectively positive or negative)<br /><br /><br />
 myTopHits$diffexpressed <- "NO"
@@ -223,7 +145,6 @@ new_df <- myTopHits[order(abs(myTopHits$logFC) > 2 & myTopHits$P.Value < 0.05, d
 new_df[1:70, "delabel"] <- head(new_df$gene_symbol,70)
 
 df <- new_df
-
 
 ggplot(data = df, aes(x = logFC , y = -log10(P.Value ), col = diffexpressed, label = delabel)) +
   geom_vline(xintercept = c(-1, 1), col = "gray", linetype = 'dashed') +
@@ -242,7 +163,7 @@ ggplot(data = df, aes(x = logFC , y = -log10(P.Value ), col = diffexpressed, lab
 
 ##################################################################################
 
-results <- decideTests(ebFit, method="global", adjust.method="BH", p.value=0.05, lfc=1)
+results <- decideTests(ebFit, method="global", adjust.method="BH", p.value=0.05, lfc=1) # determine differentially expressed genes
 colnames(v.DEGList.filtered.norm$E) <- sampleLabels
 diffGenes <- v.DEGList.filtered.norm$E[results[,1] !=0,]
 diffGenes.df <- as_tibble(diffGenes, rownames = "geneID")
@@ -288,61 +209,16 @@ h2 <- Heatmap(as.matrix(log2_val) ,
 h = h1+h2
 h
 
-#################################################################################
-
-myheatcolors <- rev(brewer.pal(name="RdBu", n=11))
-clustRows <- hclust(as.dist(1-cor(t(diffGenes), method="pearson")), method="complete") #cluster rows by pearson correlation
-clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
-module.assign <- cutree(clustRows, k=2)
-module.color <- rainbow(length(unique(module.assign)), start=0.1, end=0.9) 
-module.color <- module.color[as.vector(module.assign)] 
-heatmap.2(diffGenes, 
-          Rowv=as.dendrogram(clustRows), 
-          Colv=as.dendrogram(clustColumns),
-          RowSideColors=module.color,
-          col=myheatcolors, scale='row', labRow=NA,
-          density.info="none", trace="none",  
-          cexRow=1, cexCol=1, margins=c(8,20))
-
-modulePick <- 2 
-myModule_up <- diffGenes[names(module.assign[module.assign %in% modulePick]),] 
-hrsub_up <- hclust(as.dist(1-cor(t(myModule_up), method="pearson")), method="complete") 
-
-dev.off()
-
-heatmap.2(myModule_up, 
-          Rowv=as.dendrogram(hrsub_up), 
-          Colv=NA, 
-          labRow = NA,
-          col=myheatcolors, scale="row", 
-          density.info="none", trace="none", 
-          RowSideColors=module.color[module.assign%in%modulePick], margins=c(8,20))
-
-modulePick <- 1 
-myModule_down <- diffGenes[names(module.assign[module.assign %in% modulePick]),] 
-hrsub_down <- hclust(as.dist(1-cor(t(myModule_down), method="pearson")), method="complete") 
-
-heatmap.2(myModule_down, 
-          Rowv=as.dendrogram(hrsub_down), 
-          Colv=NA, 
-          labRow = NA,
-          col=myheatcolors, scale="row", 
-          density.info="none", trace="none", 
-          RowSideColors=module.color[module.assign%in%modulePick], margins=c(8,20))
-
-################################################################################
-
+##################################################################################
 
 # GSEA analysis
 
 gost.res_up <- gost(rownames(myModule_up), organism = "hsapiens", correction_method = "fdr")
-gostplot(gost.res_up, interactive = T, capped = F) #set interactive=FALSE to get plot for publications
+gostplot(gost.res_up, interactive = T, capped = F)
 gost.res_down <- gost(rownames(myModule_down), organism = "hsapiens", correction_method = "fdr")
-gostplot(gost.res_down, interactive = T, capped = F) #set interactive=FALSE to get plot for publications
-
+gostplot(gost.res_down, interactive = T, capped = F)
 
 c2cp <- read.gmt("c2.cp.kegg.v2023.1.Hs.symbols.gmt") 
-
 
 hs_gsea_c2 <- msigdbr(species = "Homo sapiens", 
                       category = "C2") %>% 
@@ -376,17 +252,16 @@ myGSEA.df <- myGSEA.df %>%
     NES > 0 ~ "disease",
     NES < 0 ~ "healthy"))
 
-# create 'bubble plot' to summarize y signatures across x phenotypes
+# Bubble plot
 ggplot(myGSEA.df[50:100,], aes(x=phenotype, y=ID)) + 
   geom_point(aes(size=setSize, color = NES, alpha=-log10(p.adjust))) +
   scale_color_gradient(low="blue", high="red") +
   theme_bw()
 
 
-
 ################################################################################
 
-# Gene ontology
+# Gene ontology Analysis
 
 genes_to_test <- rownames(myTopHits[abs(myTopHits$logFC) > 1.5,])
 
@@ -439,8 +314,6 @@ names(foldchanges) <- res$Entrez
 
 head(foldchanges)
 
-
-
 data("kegg.sets.hs")
 data("sigmet.idx.hs") 
 kegg.sets.hs <- kegg.sets.hs[sigmet.idx.hs]
@@ -453,7 +326,6 @@ head(keggres$greater)
 
 head(keggres$less)
 
-
 library(pathview)
 
 pathview(gene.data = df, 
@@ -463,3 +335,4 @@ pathview(gene.data = df,
          kegg.native = T)
 
 # The End
+# Thank You
